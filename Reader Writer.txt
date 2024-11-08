@@ -1,0 +1,87 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <unistd.h> // Include this for the sleep function
+
+void *reader(void *argp);
+void *writer(void *argp);
+int buf; // Shared buffer variable
+
+// Function to get input for the buffer
+int getbuff() {
+    int temp;
+    printf("\nEnter the item in buffer: ");
+    scanf("%d", &temp);
+    return temp;
+}
+
+// Function to read from the buffer
+void readbuff(int buf) {
+    printf("\nItem READ from buffer: %d\n", buf);
+}
+
+// Mutex for managing access
+pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER; // For read count
+pthread_mutex_t wrt = PTHREAD_MUTEX_INITIALIZER;     // For writing
+
+int read_count = 0; // Count of readers
+int flag = 0;       // Flag to indicate if buffer has data
+int stop = 0;       // Flag to indicate when to stop the threads
+
+// Writer thread function
+void *writer(void *argp) {
+    while (1) {
+        pthread_mutex_lock(&wrt);
+        if (flag == 0) {
+            buf = getbuff(); // Get new value for the buffer
+            flag = 1;        // Set flag to indicate the buffer has data
+        }
+        pthread_mutex_unlock(&wrt);
+        sleep(1); // Sleep to simulate work and allow readers to operate
+    }
+}
+
+// Reader thread function
+void *reader(void *argp) {
+    while (1) {
+        pthread_mutex_lock(&mutex1);
+        read_count++;
+        if (read_count == 1) {
+            pthread_mutex_lock(&wrt); // Lock writing if it's the first reader
+        }
+        pthread_mutex_unlock(&mutex1);
+
+        if (flag == 1) {
+            readbuff(buf); // Read from the buffer
+            sleep(1); // Simulate reading time
+            flag = 0; // Reset flag to indicate buffer is empty
+        }
+
+        pthread_mutex_lock(&mutex1);
+        read_count--;
+        if (read_count == 0) {
+            pthread_mutex_unlock(&wrt); // Unlock writing if it's the last reader
+        }
+        pthread_mutex_unlock(&mutex1);
+    }
+}
+
+// Main function
+int main() {
+    pthread_t tid1, tid2, tid3;
+
+    pthread_create(&tid1, NULL, writer, NULL); // Create writer thread
+    pthread_create(&tid2, NULL, reader, NULL); // Create first reader thread
+    pthread_create(&tid3, NULL, reader, NULL); // Create second reader thread
+
+    pthread_join(tid1, NULL); // Wait for the writer thread to finish
+    pthread_join(tid2, NULL); // Wait for the first reader thread to finish
+    pthread_join(tid3, NULL); // Wait for the second reader thread to finish
+
+    return 0;
+}
+
+execute:
+gcc ass4b.c -o producer_consumer -lpthread
+./producer_consumer
+

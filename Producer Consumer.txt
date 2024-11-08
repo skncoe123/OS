@@ -1,0 +1,97 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/syscall.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <semaphore.h>
+
+#define BUFFER_SIZE 20
+#define MAX_ITEMS 25  // Limit the number of items to be produced and consumed
+
+void *producer();
+void *consumer();
+
+typedef struct {
+    int buff[BUFFER_SIZE];
+    sem_t full, empty;
+} shared;
+
+shared sh;
+int in = 0, out = 0;
+int produced_count = 0, consumed_count = 0;
+sem_t mutex;
+
+int main() {
+    pthread_t ptid1, ptid2, ctid1;
+
+    // Initialize semaphores
+    sem_init(&sh.empty, 0, BUFFER_SIZE);
+    sem_init(&sh.full, 0, 0);
+    sem_init(&mutex, 0, 1);
+
+    // Create producer and consumer threads
+    pthread_create(&ptid1, NULL, producer, NULL);
+    pthread_create(&ptid2, NULL, producer, NULL);
+    pthread_create(&ctid1, NULL, consumer, NULL);
+
+    // Wait for threads to finish
+    pthread_join(ptid1, NULL);
+    pthread_join(ptid2, NULL);
+    pthread_join(ctid1, NULL);
+
+    return 0;
+}
+
+void *producer() {
+    while (1) {
+        sem_wait(&sh.empty);
+        sem_wait(&mutex);
+
+        // Check if we've reached the production limit
+        if (produced_count >= MAX_ITEMS) {
+            sem_post(&mutex);
+            sem_post(&sh.empty);
+            break;
+        }
+
+        // Produce item and add it to the buffer
+        int item = rand() % 100;
+        sh.buff[in] = item;
+        printf("\nProducer thread id: %ld, produced item: %d\n", syscall(SYS_gettid), item);
+        in = (in + 1) % BUFFER_SIZE;
+        produced_count++;
+
+        sem_post(&mutex);
+        sem_post(&sh.full);
+
+        sleep(1);  // Simulate production time
+    }
+    return NULL;
+}
+
+void *consumer() {
+    while (1) {
+        sem_wait(&sh.full);
+        sem_wait(&mutex);
+
+        // Check if we've consumed all produced items
+        if (consumed_count >= MAX_ITEMS) {
+            sem_post(&mutex);
+            sem_post(&sh.full);
+            break;
+        }
+
+        // Consume item from the buffer
+        int item = sh.buff[out];
+        printf("\nConsumer thread id: %ld, consumed item: %d\n", syscall(SYS_gettid), item);
+        out = (out + 1) % BUFFER_SIZE;
+        consumed_count++;
+
+        sem_post(&mutex);
+        sem_post(&sh.empty);
+
+        sleep(1);  // Simulate consumption time
+    }
+    return NULL;
+}
+

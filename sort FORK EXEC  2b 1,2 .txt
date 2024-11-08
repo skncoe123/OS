@@ -1,0 +1,110 @@
+#include <stdio.h>
+#include <stdlib.h>    // For atoi
+#include <unistd.h>    // For fork, getpid, getppid
+#include <sys/types.h> // For pid_t
+#include <sys/wait.h>  // For wait
+
+void bubble_sort(int a[50], int n) {
+    int i, j, temp;
+    for (i = n - 1; i > 0; i--) {
+        for (j = 0; j < i; j++) {
+            if (a[j] > a[j + 1]) {
+                temp = a[j];
+                a[j] = a[j + 1];
+                a[j + 1] = temp;
+            }
+        }
+    }
+    printf("\nSorted Array is:\n");
+    for (i = 0; i < n; i++) {
+        printf("%d\n", a[i]);
+    }
+}
+
+int main(int argc, char *argv[]) {
+    int i, j = 2, l, k;
+    int n = argc - 2;
+    int a[n];
+    char *args[n + 1];
+    args[0] = argv[1];
+
+    for (i = 1; i <= n; i++, j++) {
+        args[i] = argv[j];
+    }
+    args[i] = (char*)0;
+
+    for (l = 0, i = 1; i <= n; i++, l++) {
+        a[l] = atoi(args[i]);
+    }
+    bubble_sort(a, n);
+
+    for (l = 0, i = 1; i <= n; i++, l++) {
+        sprintf(args[i], "%d", a[l]);
+    }
+
+    pid_t pid;
+    pid = fork();
+
+    if (pid == 0) {
+        printf("\nI am Child Process, my pid is %d \n", getpid());
+        printf("I am Parent Process, my pid is %d \n", getppid());
+        execve(argv[1], args, NULL);
+    } else {
+        k = wait(0);
+        printf("\nI am Parent Process, my pid is %d \n", getpid());
+        printf("I am Parent's Parent Process, my pid is %d \n\n", getppid());
+    }
+
+    return 0;
+}
+
+code2:
+
+#include <stdio.h>
+#include <stdlib.h>    // For atoi
+#include <unistd.h>    // For getpid
+
+void bubble_sort(int a[50], int n) {
+    int i, j, temp;
+    for (i = n - 1; i > 0; i--) {
+        for (j = 0; j < i; j++) {
+            if (a[j] < a[j + 1]) {
+                temp = a[j];
+                a[j] = a[j + 1];
+                a[j + 1] = temp;
+            }
+        }
+    }
+    printf("\nSorted Array is:\n");
+    for (i = 0; i < n; i++) {
+        printf("%d\n", a[i]);
+    }
+}
+
+int main(int argc, char *argv[]) {
+    int i, j = 1, l;
+    int n = argc - 1;
+    int a[n];
+    char *args[n + 1];
+
+    printf("\nPid of the 2nd program is: %d\n", getpid());
+
+    for (i = 0; i <= n; i++, j++) {
+        args[i] = argv[j];
+    }
+    args[i] = (char*)0;
+
+    for (l = 0, i = 0; i < n; i++, l++) {
+        a[l] = atoi(args[i]);
+    }
+
+    bubble_sort(a, n);
+
+    return 0;
+}
+
+
+execution:
+gcc ass2b1.c -o ass2b1
+gcc ass2b2.c -o ass2b2
+./ass2b1 .ass2b2 6 2 9 5 1 4

@@ -1,0 +1,71 @@
+echo "Enter file name : "
+read fname
+touch $fname
+echo "emp_ID \t  emp_name\temp_age" >> $fname
+#cat $fname
+a=0
+while [ $a -le 10 ]
+do
+	echo "Enter your choice :
+	1. Insert
+	2. Delete
+	3. Modify
+	4. Exit"
+	read ch
+
+
+
+	case $ch in 
+	1) 
+		echo "Enter details"
+		echo "Enter empid"
+		read emp_ID
+		echo "Enter emp_name"
+		read emp_name
+		echo "Enter emp_age"
+		read emp_age 
+	
+		echo "$emp_ID \t  $emp_name\t\t$emp_age" >> $fname
+		cat $fname
+	
+		;;
+	2) 	
+		echo "Enter emp_ID to delete"
+        	read emp_ID
+        	touch new_file
+        	grep -w -v "$emp_ID" $fname >> new_file
+        	mv new_file $fname
+        	cat $fname
+       
+       	 	;;
+	3) 
+		echo "Enter emp_ID to modify : "
+		read emp_ID
+		touch new_file2
+		grep -w -v "$emp_ID" $fname >> new_file2
+		
+		echo "Enter new empid"
+		read emp_ID
+		echo "Enter new emp_name"
+		read emp_name
+		echo "Enter new emp_age"
+		read emp_age 
+	
+		echo "$emp_ID \t  $emp_name\t        $emp_age" >> new_file2
+		cat new_file2
+		;;
+	4) 	
+		echo "Exiting the program"
+		exit 0
+		;;
+	
+	*)
+		echo "Invalid choice"
+		;;
+	esac	
+done
+
+//save file .sh
+//chmod +x emp_management.sh
+//./emp_management.sh
+

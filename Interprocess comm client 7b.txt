@@ -1,0 +1,24 @@
+#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+int main() {
+    char *myfifo1 = "myfifo1";
+    int fd;
+
+    // Open myfifo1 for writing
+    fd = open(myfifo1, O_WRONLY);
+    if (fd == -1) {
+        perror("Failed to open myfifo1 for writing");
+        return 1;
+    }
+
+    // Send a test message to the FIFO
+    char message[] = "hello\ni am os\n";  // You can modify this message
+    write(fd, message, sizeof(message));
+
+    // Close the FIFO
+    close(fd);
+    return 0;
+}
+
